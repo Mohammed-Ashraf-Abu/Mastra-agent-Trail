@@ -1,3 +1,7 @@
+# iOS and Android folders
+ios/
+android/
+
 # OSX
 #
 .DS_Store
