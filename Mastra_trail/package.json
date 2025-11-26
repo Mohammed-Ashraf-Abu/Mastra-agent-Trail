@@ -1,0 +1,44 @@
+{
+  "name": "mastra_trail",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "mastra dev",
+    "build": "mastra build",
+    "start": "mastra start",
+    "server": "tsx src/agent-server.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "dependencies": {
+    "@ag-ui/client": "^0.0.41",
+    "@ag-ui/core": "^0.0.41",
+    "@ag-ui/encoder": "^0.0.41",
+    "@ag-ui/langgraph": "^0.0.19",
+    "@ag-ui/mastra": "^0.2.0",
+    "@ag-ui/proto": "^0.0.41",
+    "@copilotkit/runtime": "^1.10.6",
+    "@mastra/core": "^0.24.5",
+    "@mastra/evals": "^0.14.4",
+    "@mastra/libsql": "^0.16.2",
+    "@mastra/loggers": "^0.10.19",
+    "@mastra/memory": "^0.15.11",
+    "dotenv": "^17.2.3",
+    "express": "^4.18.2",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^24.10.1",
+    "mastra": "^0.18.5",
+    "tsx": "^4.7.0",
+    "typescript": "^5.9.3"
+  }
+}

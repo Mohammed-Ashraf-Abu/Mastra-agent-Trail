@@ -1,0 +1,49 @@
+{
+  "name": "bot",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "lint": "eslint .",
+    "start": "react-native start",
+    "test": "jest",
+    "clean": "npm run clean:watchman && npm run clean:metro && npm run clean:node && npm run clean:cache",
+    "clean:watchman": "watchman watch-del-all || echo 'Watchman not installed or no watches to delete'",
+    "clean:metro": "rm -rf /tmp/metro-* && rm -rf /tmp/haste-* && rm -rf $TMPDIR/metro-* && rm -rf $TMPDIR/haste-*",
+    "clean:node": "rm -rf node_modules && npm cache clean --force",
+    "clean:cache": "rm -rf $TMPDIR/react-* && rm -rf $TMPDIR/metro-* && rm -rf $TMPDIR/haste-*",
+    "clean:ios": "cd ios && rm -rf build && rm -rf Pods && rm -rf ~/Library/Developer/Xcode/DerivedData && cd .. && bundle exec pod install",
+    "clean:android": "cd android && ./gradlew clean && rm -rf .gradle && rm -rf app/build && cd ..",
+    "clean:all": "npm run clean && npm run clean:ios && npm run clean:android && npm install",
+    "reset": "npm run clean:all && npm start -- --reset-cache"
+  },
+  "dependencies": {
+    "react": "19.0.0",
+    "react-native": "0.78.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@babel/preset-env": "^7.25.3",
+    "@babel/runtime": "^7.25.0",
+    "@react-native-community/cli": "15.0.1",
+    "@react-native-community/cli-platform-android": "15.0.1",
+    "@react-native-community/cli-platform-ios": "15.0.1",
+    "@react-native/babel-preset": "0.78.3",
+    "@react-native/eslint-config": "0.78.3",
+    "@react-native/metro-config": "0.78.3",
+    "@react-native/typescript-config": "0.78.3",
+    "@types/jest": "^29.5.13",
+    "@types/react": "^19.0.0",
+    "@types/react-test-renderer": "^19.0.0",
+    "eslint": "^8.19.0",
+    "jest": "^29.6.3",
+    "prettier": "2.8.8",
+    "react-test-renderer": "19.0.0",
+    "reactotron-react-native": "^5.1.18",
+    "typescript": "5.0.4"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
