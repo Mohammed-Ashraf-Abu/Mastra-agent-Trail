@@ -22,3 +22,4 @@ const SERVER_PORT = 3000;
 
 export const SERVER_URL = `http://${SERVER_IP}:${SERVER_PORT}`;
 export const CHAT_ENDPOINT = `${SERVER_URL}/chat`;
+export const COPILOTKIT_ENDPOINT = `${SERVER_URL}/copilotkit`;

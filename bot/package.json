@@ -20,7 +20,9 @@
   },
   "dependencies": {
     "react": "19.0.0",
-    "react-native": "0.78.3"
+    "react-native": "0.78.3",
+    "@ag-ui/client": "^0.0.41",
+    "@ag-ui/proto": "^0.0.41"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

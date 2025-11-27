@@ -1,181 +1,140 @@
-import React, {useEffect, useState} from 'react';
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+/**
+ * App with UI Manager Middle Layer
+ *
+ * This uses the CopilotKit-style middle layer architecture:
+ *
+ * Flow:
+ * Server → SSE Stream → useAgUIClientWithUIManager → UI Manager (Middle Layer) → UI Context → Components
+ *
+ * The UI Manager acts as the middle layer that:
+ * 1. Receives UI directives from the server
+ * 2. Manages UI state
+ * 3. Notifies React components of changes
+ * 4. Provides a clean separation between server logic and UI rendering
+ */
+
+import React, {useState} from 'react';
+import {StyleSheet, Text, View, SafeAreaView} from 'react-native';
+import {UIProvider} from './src/context/UIContext';
+import {getUIManager} from './src/services/UIManager';
+import {useAgUIClientWithUIManager} from './src/hooks/useAgUIClientWithUIManager';
+import {ChatInput} from './src/components/ChatInput';
+import {ChatMessagesList} from './src/components/ChatMessagesList';
+import {UIDirectiveRenderer} from './src/components/ui/UIDirectiveRenderer';
 import {SERVER_URL} from './src/config/server';
 
-function App(): React.JSX.Element {
+function AppContent(): React.JSX.Element {
   const userId = 'user-123';
-  const [healthStatus, setHealthStatus] = useState<string>('Checking...');
-  const [response, setResponse] = useState<string>('');
-  const [prompt, setPrompt] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  useEffect(() => {
-    async function fetchHealthCheck() {
-      console.log('App mounted');
-      console.log('App details:', {userId});
+  const [inputText, setInputText] = useState<string>('');
 
-      try {
-        const healthResponse = await fetch(`${SERVER_URL}/health`);
-        const data = await healthResponse.json();
+  // Get the UI Manager instance
+  const uiManager = getUIManager();
 
-        if (data.ok && data.status === 'healthy') {
-          setHealthStatus(`✅ Server is healthy (${data.timestamp})`);
-          console.log('Health check passed:', data);
-        } else {
-          setHealthStatus('⚠️ Server health check failed');
-          console.warn('Health check failed:', data);
-        }
+  const {messages, sendMessage, isLoading, isConnected, handleUIAction} =
+    useAgUIClientWithUIManager({
+      serverUrl: SERVER_URL,
+      userId,
+      uiManager, // Pass UI Manager to the hook
+      onError: error => {
+        console.error('Ag-UI Client Error:', error);
+      },
+      onUIAction: (action, data) => {
+        console.log('UI Action:', action, data);
+      },
+    });
 
-        // Use Reactotron for debugging
-        if (__DEV__ && console.tron) {
-          console.tron.log('Health check result', data);
-        }
-      } catch (error) {
-        setHealthStatus('❌ Server connection failed');
-        console.error('Health check error:', error);
-      }
-    }
-    fetchHealthCheck();
-  }, [userId]);
-
-  const handleButtonPress = async (userPrompt: string) => {
-    if (!userPrompt.trim() || isLoading) {
-      return;
-    }
-
-    setIsLoading(true);
-    setResponse('');
-
-    try {
-      const chatResponse = await fetch(`${SERVER_URL}/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: userPrompt,
-        }),
-      });
-      const data = await chatResponse.json();
-      console.log('Chat response:', data);
-      setResponse(data.response);
-      setPrompt('');
-    } catch (error) {
-      console.error('Chat error:', error);
-      setResponse(
-        `Error: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    } finally {
-      setIsLoading(false);
+  const handleSend = async () => {
+    if (inputText.trim() && !isLoading) {
+      await sendMessage(inputText);
+      setInputText('');
     }
   };
 
+  const handleFileUpload = async () => {
+    // File upload is handled by UIDirectiveRenderer
+    handleUIAction('file-uploaded', {});
+  };
+
+  const handleButtonPress = async (buttonId: string, action?: string) => {
+    handleUIAction(`button-${buttonId}`, {action});
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Weather Assistant</Text>
-      <Text style={styles.healthStatus}>{healthStatus}</Text>
-      <TextInput
-        value={prompt}
-        onChangeText={setPrompt}
-        style={styles.textInput}
-      />
-      <TouchableOpacity
-        onPress={() => handleButtonPress(prompt)}
-        disabled={isLoading || !prompt.trim()}
-        style={[
-          styles.button,
-          (isLoading || !prompt.trim()) && styles.buttonDisabled,
-        ]}>
-        {isLoading && (
-          <ActivityIndicator
-            size="small"
-            color="#fff"
-            style={styles.buttonLoader}
-          />
-        )}
-        <Text style={styles.buttonText}>
-          {isLoading ? 'Sending...' : 'Send'}
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Weather Assistant</Text>
+        <Text
+          style={[
+            styles.connectionStatus,
+            {color: isConnected ? '#34C759' : '#FF3B30'},
+          ]}>
+          {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
         </Text>
-      </TouchableOpacity>
-      <View style={styles.responseContainer}>
-        {isLoading ? (
-          <ActivityIndicator size="large" color="#0000ff" />
-        ) : (
-          <Text style={styles.responseText}>
-            {response || 'No response yet'}
-          </Text>
-        )}
       </View>
-    </View>
+
+      {/* Message bubbles */}
+      <View style={styles.messagesContainer}>
+        <ChatMessagesList messages={messages} isLoading={isLoading} />
+      </View>
+
+      {/* Agent UI - Automatically renders based on UI Manager state */}
+      <View style={styles.agentUIContainer}>
+        <UIDirectiveRenderer
+          onButtonPress={handleButtonPress}
+          onFileUpload={handleFileUpload}
+          onCancelUpload={() => {
+            handleUIAction('cancel-upload', {});
+          }}
+        />
+      </View>
+
+      {/* Text input - always visible */}
+      <ChatInput
+        value={inputText}
+        onChangeText={setInputText}
+        onSend={handleSend}
+        isLoading={isLoading}
+        placeholder="Ask about the weather..."
+      />
+    </SafeAreaView>
+  );
+}
+
+function App(): React.JSX.Element {
+  return (
+    <UIProvider>
+      <AppContent />
+    </UIProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+    backgroundColor: '#F9F9F9',
   },
   title: {
     fontSize: 24,
-    marginBottom: 20,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    color: '#000000',
   },
-  healthStatus: {
-    fontSize: 14,
-    marginBottom: 20,
-    textAlign: 'center',
+  connectionStatus: {
+    fontSize: 12,
+    color: '#666666',
   },
-  textInput: {
-    fontSize: 14,
-    marginBottom: 20,
-    textAlign: 'center',
-    borderWidth: 1,
-    borderColor: 'black',
-    padding: 10,
-    width: '100%',
+  messagesContainer: {
+    flex: 1,
   },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginBottom: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 120,
-  },
-  buttonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  buttonLoader: {
-    marginRight: 8,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  responseContainer: {
-    minHeight: 100,
-    width: '100%',
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  responseText: {
-    fontSize: 14,
-    textAlign: 'center',
+  agentUIContainer: {
+    // No flex - takes only the space it needs
+    backgroundColor: '#FFFFFF',
   },
 });
 
